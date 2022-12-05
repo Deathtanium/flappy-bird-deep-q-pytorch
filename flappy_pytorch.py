@@ -121,11 +121,11 @@ class FlappyAgent:
     
     states, actions, rewards, new_states, finishers = self.memory.sample(self.batch_size)
     
-    states = torch.tensor(states, dtype=torch.float32,device=self.device)
-    new_states = torch.tensor(new_states, dtype=torch.float32,device=self.device)
-    actions = torch.tensor(actions, dtype=torch.int64,device=self.device)
-    rewards = torch.tensor(rewards, dtype=torch.float32,device=self.device)
-    finishers = torch.tensor(finishers, dtype=torch.float32,device=self.device)
+    states = torch.tensor(states, dtype=torch.float32, device=self.device)
+    new_states = torch.tensor(new_states, dtype=torch.float32, device=self.device)
+    actions = torch.tensor(actions, dtype=torch.int64, device=self.device)
+    rewards = torch.tensor(rewards, dtype=torch.float32, device=self.device)
+    finishers = torch.tensor(finishers, dtype=torch.float32, device=self.device)
     
     q_pred = self.nnet(states)
     q_pred = torch.gather(q_pred, 1, actions.unsqueeze(1)).squeeze(1)
@@ -145,7 +145,7 @@ class FlappyAgent:
     self.nnet.load_state_dict(torch.load('flappy_model.pth'))
 
 def stateConv(state):
-  return np.array(state).flatten()
+  return state
   #return np.array([state[2]/320.0,state[3]/512.0,state[4]/512.0])
 
 if __name__ == "__main__":
