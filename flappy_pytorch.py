@@ -95,10 +95,9 @@ class FlappyAgent:
     layers.append(nn.ReLU())
     layers.append(nn.Linear(layers_sizes[-1], action_count))
     self.nnet = nn.Sequential(*layers)
-    #FlappyNet(math.prod(input_dims), action_count, layers_sizes)
     self.optimizer = torch.optim.Adam(self.nnet.parameters(), lr=learn_rate)
-    self.loss = nn.MSELoss
-    self.device = torch.device("cuda:0")
+    self.loss = nn.MSELoss()
+    self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     self.nnet.to(self.device)
     self.loss.to(self.device)
     self.nnet.eval()
@@ -109,10 +108,8 @@ class FlappyAgent:
     else:
       state = torch.tensor(state, dtype=torch.float32,device=self.device)
       state = state.unsqueeze(0)
-      #print(state)
       tmp = self.nnet(state)
       action = torch.argmax(tmp).item()
-      #print(action)
     return action
 
   def learn(self):
@@ -134,7 +131,7 @@ class FlappyAgent:
     q_pred = torch.gather(q_pred, 1, actions.unsqueeze(1)).squeeze(1)
     q_next = self.nnet(new_states).max(dim=1)[0]
     q_target = rewards + self.gamma*q_next*finishers
-    loss = self.loss(q_target, q_pred)
+    loss = self.loss(q_pred, q_target)
     loss.backward()
     self.optimizer.step()
     self.nnet.eval()
