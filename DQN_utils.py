@@ -26,17 +26,15 @@ class ReplayMemory(object):
 class DeepQNet(nn.Module):
   def __init__(self, layer_sizes, device):
     super(DeepQNet, self).__init__()
-    #set own device
     self.device = device
     self.fc_arr = nn.ParameterList().to(device)
     for i in range(1,len(layer_sizes)):
       self.fc_arr.append(nn.Linear(layer_sizes[i-1], layer_sizes[i],device=device))
 
   def forward(self, x:torch.Tensor):
-    #TODO: remove assertion snippet
-    assert type(x) == torch.Tensor
-    for i in range(len(self.fc_arr)):
+    for i in range(len(self.fc_arr)-1):
       x = F.relu(self.fc_arr[i](x))   #NOTE: Could use something other than relu for the last layer
+    x= self.fc_arr[-1](x)
     return x
 
 class DQNAgent:
@@ -69,9 +67,6 @@ class DQNAgent:
     self.playCounter = 0
 
   def getAction(self, state:torch.Tensor):
-    #TODO: remove assertion snippet
-    assert type(state) == torch.Tensor
-    
     eps_threshold = self.eps_end + (self.eps - self.eps_end) * math.exp(-1. * self.playCounter / self.eps_decay)
     if random.random() > eps_threshold:
       with torch.no_grad():
@@ -92,7 +87,7 @@ class DQNAgent:
     q_eval = self.q_net(state_batch)
     q_next = self.q_net(next_state_batch)
     q_target = q_eval.clone()
-    q_target[range(self.batch_size), action_batch] = reward_batch + self.gamma * torch.max(q_next, 1)[0]
+    q_target[range(self.batch_size), action_batch] = reward_batch + self.gamma * torch.max(q_next, 1)[0] 
 
     loss:nn.modules.loss = self.loss(q_eval, q_target)
 

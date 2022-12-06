@@ -1,2 +1,3 @@
 ple
-flappy_model.pth
+flappy_pytorch.pth
+__pycache__
