@@ -60,19 +60,28 @@ class DQNAgent_pytorch:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=learn_rate)
         self.loss = nn.MSELoss()
 
-    def getAction(self, state):
+    def getAction(self, state : np.ndarray | list):
+        #convert state to tensor
         state = torch.tensor(state, dtype=torch.float32, device=self.device)
+        
+        #decay exploration rate
         eps_threshold = max(self.eps - self.play_epoch * self.eps_decay, self.eps_end)
+        
+        #decide exploration vs exploitation
         if np.random.random() < eps_threshold:
             action = np.random.choice(self.actions)
         else:
             with torch.no_grad():
                 actions = self.policy_net(state.unsqueeze(0))
                 action = torch.argmax(actions).item()
+
         return action
 
+    #append state, action, next_state, reward, done to memory
     def remember(self, state, action, next_state, reward, done):
         self.memory.save(state, action, next_state, reward, done)
+
+    #TODO revisit playmemory and how memories are prioritized
 
     def train(self):
         if len(self.memory) < self.batch_size:
@@ -106,81 +115,6 @@ class DQNAgent_pytorch:
 
     def load(self, path):
         self.policy_net.load_state_dict(torch.load(path))
-    def __init__(self, 
-                 device,
-                 action_count,
-                 input_dims,
-                 training_batch_size,
-                 learn_rate=0.001,
-                 gamma=0.99,
-                 eps=0.2,
-                 eps_decay=0.000,
-                 eps_end=0.01,
-                 layers_sizes=[256, 256],
-                 play_memory=1000000
-                ):
-        self.device = device
-        self.actions = [i for i in range(action_count)]
-        self.gamma = gamma
-        self.eps = eps
-        self.eps_end = eps_end
-        self.eps_decay = eps_decay
-        self.batch_size = training_batch_size
-        self.action_count = action_count
-        self.play_epoch = 0
-        self.memory = ReplayMemory(play_memory)
-        layers_sizes = [np.prod(input_dims)] + layers_sizes + [action_count]
-
-        self.policy_net = DeepQNetwork(layers_sizes, device).to(device)
-        self.target_net = DeepQNetwork(layers_sizes, device).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=learn_rate)
-        self.loss = nn.MSELoss()
 
-    def getAction(self, state):
-        state = torch.tensor(state, dtype=torch.float32, device=self.device)
-        eps_threshold = max(self.eps - self.play_epoch * self.eps_decay, self.eps_end)
-        if np.random.random() < eps_threshold:
-            action = np.random.choice(self.actions)
-        else:
-            with torch.no_grad():
-                actions = self.policy_net(state.unsqueeze(0))
-                action = torch.argmax(actions).item()
-        return action
-
-    def remember(self, state, action, next_state, reward, done):
-        self.memory.save(state, action, next_state, reward, done)
-
-    def train(self):
-        if len(self.memory) < self.batch_size:
-            return
-
-        batch = self.memory.sample(self.batch_size)
-        batch = Transition(*zip(*batch))
-        states = torch.tensor(batch.state, dtype=torch.float32, device=self.device)
-        actions = torch.tensor(batch.action, dtype=torch.long, device=self.device)
-        rewards = torch.tensor(batch.reward, dtype=torch.float32, device=self.device)
-        next_states = torch.tensor(batch.next_state, dtype=torch.float32, device=self.device)
-        dones = torch.tensor(batch.done, dtype=torch.float32, device=self.device)
-
-        state_action_values = self.policy_net(states).gather(1, actions.unsqueeze(1))
-        next_state_values = self.target_net(next_states).max(1)[0].detach()
-        expected_state_action_values = rewards + self.gamma * next_state_values * (1 - dones)
-
-        loss = self.loss(state_action_values, expected_state_action_values.unsqueeze(1))
-
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-
-        self.play_epoch += 1
-
-        if self.play_epoch % TARGET_UPDATE == 0:
-            self.target_net.load_state_dict(self.policy_net.state_dict())
-
-    def save(self, path):
-        torch.save(self.policy_net.state_dict(), path)
-
-    def load(self, path):
-        self.policy_net.load_state_dict(torch.load(path))
