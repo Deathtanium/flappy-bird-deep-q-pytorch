@@ -1,7 +1,9 @@
 import random
 from collections import namedtuple, deque
+#store using tensors
+import torch
 
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward', 'done'))
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
 class ReplayMemory(object):
     """
@@ -11,7 +13,7 @@ class ReplayMemory(object):
         self.memory = deque([], maxlen=capacity)
 
     def save(self, *args):
-        """('state', 'action', 'next_state', 'reward', 'done')"""
+        """('state', 'action', 'next_state', 'reward')"""
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):

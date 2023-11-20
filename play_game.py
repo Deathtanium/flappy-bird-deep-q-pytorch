@@ -1,4 +1,5 @@
 import torch 
+import numpy as np
 
 import flappy_bird_gymnasium
 import gymnasium
@@ -19,19 +20,20 @@ PLAY_MEMORY = 1000000
 LAYERS_SIZES = [256, 256]
 
 #get size of observation space
-obs_size = env.observation_space.shape
+obs_space = np.prod(env.observation_space.shape)
+act_space = np.prod(env.action_space.shape)
 
-agent = DQNAgent_pytorch(DEVICE, 2, env.action_space.shape, BATCH_SIZE, LR, GAMMA, EPS, EPS_DECAY, EPS_END, LAYERS_SIZES, PLAY_MEMORY)
 
-obs, _ = env.reset()
+
+agent = DQNAgent_pytorch(DEVICE, env.observation_space, env.action_space.shape, BATCH_SIZE, LR, GAMMA, EPS, EPS_DECAY, EPS_END, LAYERS_SIZES, PLAY_MEMORY)
+
+
 while True:
     # Next action:
-    # Also train the agent
-    action = agent.get_action(obs)
+    action = agent.get_action()
     
-
     # Processing:
-    obs, reward, terminated, _, info = env.step(action)
+    obs, reward, terminated, truncated, info = env.step(action)
     
     # Checking if the player is still alive
     if terminated:
