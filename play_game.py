@@ -26,8 +26,9 @@ agent = DQNAgent_pytorch(DEVICE, 2, env.action_space.shape, BATCH_SIZE, LR, GAMM
 obs, _ = env.reset()
 while True:
     # Next action:
-    # (feed the observation to your agent here)
-    action = env.action_space.sample()
+    # Also train the agent
+    action = agent.get_action(obs)
+    
 
     # Processing:
     obs, reward, terminated, _, info = env.step(action)
