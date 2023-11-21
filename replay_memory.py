@@ -3,7 +3,7 @@ from collections import namedtuple, deque
 #store using tensors
 import torch
 
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward', 'done'))
 
 class ReplayMemory(object):
     """
@@ -12,8 +12,8 @@ class ReplayMemory(object):
     def __init__(self, capacity):
         self.memory = deque([], maxlen=capacity)
 
-    def save(self, *args):
-        """('state', 'action', 'next_state', 'reward')"""
+    def push(self, *args):
+        """('state', 'action', 'next_state', 'reward', 'done')"""
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
